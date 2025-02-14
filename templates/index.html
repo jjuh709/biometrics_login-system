@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Flask Auth</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Authentication System</h1>
+
+        <!-- Registration Form -->
+        <form id="register-form" class="mb-6 bg-white p-4 rounded-lg shadow-md">
+            <h2 class="text-2xl mb-4">Register</h2>
+            <input type="text" id="username" placeholder="Username" class="mb-4 p-2 border border-gray-300 rounded w-full">
+            <input type="tel" id="phone" placeholder="Phone" class="mb-4 p-2 border border-gray-300 rounded w-full">
+            <input type="password" id="password" placeholder="Password" class="mb-4 p-2 border border-gray-300 rounded w-full">
+            <button type="submit" class="bg-blue-500 text-white p-2 rounded w-full">Register</button>
+        </form>
+
+        <!-- Login Form -->
+        <form id="login-form" class="mb-6 bg-white p-4 rounded-lg shadow-md">
+            <h2 class="text-2xl mb-4">Login</h2>
+            <input type="text" id="login-username" placeholder="Username" class="mb-4 p-2 border border-gray-300 rounded w-full">
+            <input type="password" id="login-password" placeholder="Password" class="mb-4 p-2 border border-gray-300 rounded w-full">
+            <button type="submit" class="bg-green-500 text-white p-2 rounded w-full">Login</button>
+        </form>
+
+        <!-- Biometric Login Button (Placeholder for future) -->
+        <button id="biometric-login" class="bg-yellow-500 text-white p-2 rounded w-full">Login with Biometrics</button>
+    </div>
+
+    <script>
+        // Handle Registration
+        document.getElementById("register-form").addEventListener("submit", function(e) {
+            e.preventDefault();
+            fetch("/auth/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    username: document.getElementById("username").value,
+                    phone: document.getElementById("phone").value,
+                    password: document.getElementById("password").value
+                })
+            }).then(res => res.json()).then(data => {
+                alert(data.message);
+            });
+        });
+
+        // Handle Login
+        document.getElementById("login-form").addEventListener("submit", function(e) {
+            e.preventDefault();
+            fetch("/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    username: document.getElementById("login-username").value,
+                    password: document.getElementById("login-password").value
+                })
+            }).then(res => res.json()).then(data => {
+                if (data.access_token) {
+                    // Store the JWT token in localStorage
+                    localStorage.setItem("token", data.access_token);
+                    alert("Login successful!");
+                    // Redirect to dashboard after successful login
+                    window.location.href = "/dashboard";
+                } else {
+                    alert(data.message);  // Show error message if login fails
+                }
+            });
+        });
+
+        // Biometric Login Placeholder (Under Development)
+        document.getElementById("biometric-login").addEventListener("click", async function() {
+            alert("Biometric Login Clicked (Implementation in progress)");
+        });
+
+        // Check if the user is logged in (token exists in localStorage)
+        function checkAuth() {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                // If no token is found, redirect to login page
+                alert("You must be logged in to access the dashboard.");
+                window.location.href = "/";
+            }
+        }
+
+        // Check if the user is logged in before visiting /dashboard
+        window.onload = function() {
+            // If the user is on the /dashboard route, check if they're logged in
+            if (window.location.pathname === "/dashboard") {
+                checkAuth(); // Ensure user has token stored in localStorage
+                // Fetch the dashboard data with the token in Authorization header
+                const token = localStorage.getItem("token");
+                fetch('/dashboard', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`  // Attach JWT token to request header
+                    }
+                }).then(res => res.json()).then(data => {
+                    if (data.message) {
+                        alert(data.message);
+                    }
+                }).catch(err => {
+                    alert("Error: Unauthorized access");
+                    window.location.href = "/";
+                });
+            }
+        };
+
+    </script>
+</body>
+</html>
